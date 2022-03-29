@@ -8,6 +8,8 @@
 #include "../Components/BoxColliderComponent.h"
 #include "../Components/KeyboardControlledComponent.h"
 #include "../Components/CameraFollowComponent.h"
+#include "../Components/ProjectileEmitterComponent.h"
+#include "../Components/HealthComponent.h"
 #include "../Systems/MovementSystem.h"
 #include "../Systems/RenderSystem.h"
 #include "../Systems/AnimationSystem.h"
@@ -16,6 +18,7 @@
 #include "../Systems/DamageSystem.h"
 #include "../Systems/KeyboardControlSystem.h"
 #include "../Systems/CameraMovementSystem.h"
+#include "../Systems/ProjectileEmitSystem.h"
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -56,6 +59,7 @@ void Game::LoadLevel(int level){
     m_registry->AddSystem<DamageSystem>();
     m_registry->AddSystem<KeyboardControlSystem>();
     m_registry->AddSystem<CameraMovementSystem>();
+    m_registry->AddSystem<ProjectileEmitSystem>();
 
     // Adding assets to the asset store
     m_assetStore->AddTexture(m_ptrRenderer, "tank-image", "./assets/images/tank-panther-right.png");
@@ -63,6 +67,7 @@ void Game::LoadLevel(int level){
     m_assetStore->AddTexture(m_ptrRenderer, "radar-image", "./assets/images/radar.png");
     m_assetStore->AddTexture(m_ptrRenderer, "truck-image", "./assets/images/truck-ford-right.png");
     m_assetStore->AddTexture(m_ptrRenderer, "tilemap-image", "./assets/tilemaps/jungle.png");
+    m_assetStore->AddTexture(m_ptrRenderer, "bullet-image", "./assets/images/bullet.png");
    
 
     // Load the tilemap
@@ -103,6 +108,7 @@ void Game::LoadLevel(int level){
     chopper.AddComponent<AnimationComponent>(2, 15, true);
     chopper.AddComponent<KeyboardControlledComponent>(glm::vec2(0.0, -120.0), glm::vec2(120.0, 00.0), glm::vec2(00.0, 120.0), glm::vec2(-120.0, 00.0));
     chopper.AddComponent<CameraFollowComponent>();
+    chopper.AddComponent<HealthComponent>(100);
 
     Entity radar = m_registry->CreateEntity();
     radar.AddComponent<TransformComponent>(glm::vec2(m_windowWidth - 75, 10.0), glm::vec2(1.0, 1.0), 0.0);
@@ -116,12 +122,16 @@ void Game::LoadLevel(int level){
     tank.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     tank.AddComponent<SpriteComponent>("tank-image", 32, 32, 0, 0, 2);
     tank.AddComponent<BoxColliderComponent>(32, 32);
+    tank.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 10000, 0, false);
+    tank.AddComponent<HealthComponent>(100);
 
     Entity truck = m_registry->CreateEntity();
     truck.AddComponent<TransformComponent>(glm::vec2(1000.0, 10.0), glm::vec2(1.0, 1.0), 0.0);
-    truck.AddComponent<RigidBodyComponent>(glm::vec2(-100, 0.0));
+    truck.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     truck.AddComponent<SpriteComponent>("truck-image", 32, 32, 0, 0, 1);
     truck.AddComponent<BoxColliderComponent>(32, 32);
+    truck.AddComponent<ProjectileEmitterComponent>(glm::vec2(-300.0, 0), 1000, 10000, 0, false);
+    truck.AddComponent<HealthComponent>(100);
 
 };
 
@@ -156,6 +166,7 @@ void Game::Update(){
     m_registry->GetSystem<AnimationSystem>().Update();
     m_registry->GetSystem<CollisionSystem>().Update(true, m_eventBus);
     m_registry->GetSystem<CameraMovementSystem>().Update(m_camera);
+    m_registry->GetSystem<ProjectileEmitSystem>().Update(m_registry);
 
     // Update the registry to process the entities that are in the buffer
     m_registry->Update();
