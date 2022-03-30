@@ -35,10 +35,7 @@ class ProjectileEmitSystem: public System {
             for (auto entity : GetSystemEntities()) {
 
                 // Is the player
-                if(entity.HasComponent<KeyboardControlledComponent>() && 
-                   entity.HasComponent<SpriteComponent>() &&
-                   entity.HasComponent<TransformComponent>()
-                ) {
+                if(entity.HasTag("player")) {
 
                     const auto transform = entity.GetComponent<TransformComponent>();
                     const auto rigidBody = entity.GetComponent<RigidBodyComponent>();
@@ -103,6 +100,7 @@ class ProjectileEmitSystem: public System {
 
                 // Add a new projectile entity to the registry
                 Entity projectile = registry->CreateEntity();
+                projectile.Group("projectiles");
                 projectile.AddComponent<TransformComponent>(projectilePosition, glm::vec2(1.0), 0.0);
                 projectile.AddComponent<RigidBodyComponent>(projectileVelocity);
                 projectile.AddComponent<SpriteComponent>("bullet-image", 4, 4, 0, 0, 4);

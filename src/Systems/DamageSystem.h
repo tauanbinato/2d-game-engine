@@ -5,6 +5,8 @@
 #include "../EventBus/EventBus.h"
 #include "../Events/CollisionEvent.h"
 #include "../Components/BoxColliderComponent.h"
+#include "../Components/ProjectileComponent.h"
+#include "../Components/HealthComponent.h"
 #include "../Logger/Logger.h"
 
 class DamageSystem: public System {
@@ -18,9 +20,43 @@ class DamageSystem: public System {
         }
 
         void onCollision(CollisionEvent& event) {
-            Logger::Log("The Damage System recieved an event collision between entities " + std::to_string(event.a.GetId()) + " and " + std::to_string(event.b.GetId()));
-            // event.a.Kill();
-            // event.b.Kill();
+            Entity a = event.a;
+            Entity b = event.b;
+
+            Logger::Log("The Damage System recieved an event collision between entities " + std::to_string(a.GetId()) + " and " + std::to_string(b.GetId()));
+            if (a.BelongsToGroup("projectiles") && b.HasTag("player")) {
+                OnProjectileHitsPlayer(a, b); // a is the projectile and b is the player 
+            }
+
+            if (b.BelongsToGroup("projectiles") && a.HasTag("player")) {
+                OnProjectileHitsPlayer(b, a); // b is the projectile and a is the player 
+            }
+
+
+            if (a.BelongsToGroup("projectiles") && b.BelongsToGroup("enemies")) {
+
+            }
+
+            if (b.BelongsToGroup("projectiles") && a.BelongsToGroup("enemies")) {
+
+            }
+
+        }
+
+        void OnProjectileHitsPlayer(Entity projectile, Entity player) {
+            auto projectileComponent = projectile.GetComponent<ProjectileComponent>();
+
+            if(!projectileComponent.isFriendly) {
+                // Reduce the health of the player by the projectile hit percentDamage
+                auto& health = player.GetComponent<HealthComponent>();
+                health.healthPercentage -= projectileComponent.hitPercentDamage;
+
+                if(health.healthPercentage <= 0) {
+                    player.Kill();
+                }
+
+                projectile.Kill();
+            }
         }
 
         void Update() {

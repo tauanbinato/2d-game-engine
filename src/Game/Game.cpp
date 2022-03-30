@@ -91,6 +91,7 @@ void Game::LoadLevel(int level){
             mapFile.ignore();
 
             Entity tile = m_registry->CreateEntity();
+            tile.Group("tiles");
             tile.AddComponent<TransformComponent>(glm::vec2(x * (tileScale * tileSize), y * (tileScale * tileSize)), glm::vec2(tileScale, tileScale), 0.0);
             tile.AddComponent<SpriteComponent>("tilemap-image", tileSize, tileSize, srcRectX, srcRectY, 0, false);
         }
@@ -105,13 +106,14 @@ void Game::LoadLevel(int level){
     // Create some entities
     Entity chopper = m_registry->CreateEntity();
     chopper.Tag("player");
-    chopper.AddComponent<TransformComponent>(glm::vec2(20.0, 20.0), glm::vec2(2.0, 2.0), 0.0);
+    chopper.AddComponent<TransformComponent>(glm::vec2(100.0, 100.0), glm::vec2(2.0, 2.0), 0.0);
     chopper.AddComponent<RigidBodyComponent>(glm::vec2(120, 0.0));
     chopper.AddComponent<SpriteComponent>("chopper-image", 32, 32, 0, 0, 2, false);
     chopper.AddComponent<AnimationComponent>(2, 15, true);
     chopper.AddComponent<KeyboardControlledComponent>(glm::vec2(0.0, -120.0), glm::vec2(120.0, 00.0), glm::vec2(00.0, 120.0), glm::vec2(-120.0, 00.0));
     chopper.AddComponent<CameraFollowComponent>();
-    chopper.AddComponent<ProjectileEmitterComponent>(glm::vec2(500.0, 500.0), 300, 5000, 0, true);
+    chopper.AddComponent<BoxColliderComponent>(32, 32);
+    chopper.AddComponent<ProjectileEmitterComponent>(glm::vec2(500.0, 500.0), 300, 5000, 10, true);
     chopper.AddComponent<HealthComponent>(100);
 
     Entity radar = m_registry->CreateEntity();
@@ -127,7 +129,7 @@ void Game::LoadLevel(int level){
     tank.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     tank.AddComponent<SpriteComponent>("tank-image", 32, 32, 0, 0, 2);
     tank.AddComponent<BoxColliderComponent>(32, 32);
-    tank.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 0, false);
+    tank.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 40, false);
     tank.AddComponent<HealthComponent>(100);
 
     Entity truck = m_registry->CreateEntity();
@@ -136,7 +138,7 @@ void Game::LoadLevel(int level){
     truck.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     truck.AddComponent<SpriteComponent>("truck-image", 32, 32, 0, 0, 1);
     truck.AddComponent<BoxColliderComponent>(32, 32);
-    truck.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 0, false);
+    truck.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 20, false);
     truck.AddComponent<HealthComponent>(100);
 
 };
@@ -171,7 +173,7 @@ void Game::Update(){
     // Updating our systems
     m_registry->GetSystem<MovementSystem>().Update(deltaTime);
     m_registry->GetSystem<AnimationSystem>().Update();
-    m_registry->GetSystem<CollisionSystem>().Update(true, m_eventBus);
+    m_registry->GetSystem<CollisionSystem>().Update(false, m_eventBus);
     m_registry->GetSystem<CameraMovementSystem>().Update(m_camera);
     m_registry->GetSystem<ProjectileEmitSystem>().Update(m_registry);
     m_registry->GetSystem<ProjectileLifeCycleSystem>().Update();
