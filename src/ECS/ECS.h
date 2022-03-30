@@ -36,6 +36,12 @@ class Entity {
         int GetId() const;
         void Kill();
 
+        // Manage entity tags and groups
+		void Tag(const std::string& tag);
+    	bool HasTag(const std::string& tag) const;
+    	void Group(const std::string& group);
+    	bool BelongsToGroup(const std::string& group) const;
+
         Entity& operator =(const Entity& other) = default;
         // Overloading the operator of == when using with Entity instances
         bool operator == (const Entity& other) const { return m_id == other.m_id; }
@@ -162,6 +168,14 @@ class Registry {
         std::set<Entity> m_entitiesTobeAdded;
         std::set<Entity> m_entitiesToBeKilled;
 
+        // Entity tags (one tag name per entity)
+        std::unordered_map<std::string, Entity> entityPerTag;
+        std::unordered_map<int, std::string> tagPerEntity;
+
+        // Entity groups (a set of entities per groupname)
+        std::unordered_map<std::string, std::set<Entity>> entitiesPerGroup;
+        std::unordered_map<int, std::string> groupPerEntity;
+
         // Vector of component pools, each pool contains all the data for a certain component type
         // [Vector index = component type id]
         // [Pool index = entity id]
@@ -191,6 +205,18 @@ class Registry {
         //##### Entity Managment ####################################################################
         Entity CreateEntity();
         void KillEntity(Entity entity);
+
+        // Tag management
+		void TagEntity(Entity entity, const std::string& tag);
+		bool EntityHasTag(Entity entity, const std::string& tag) const;
+		Entity GetEntityByTag(const std::string& tag) const;
+		void RemoveEntityTag(Entity entity);
+
+        // Group management
+		void GroupEntity(Entity entity, const std::string& group);
+		bool EntityBelongsToGroup(Entity entity, const std::string& group) const;
+		std::vector<Entity> GetEntitiesByGroup(const std::string& group) const;
+		void RemoveEntityGroup(Entity entity);
 
         //##### Component Managment #################################################################
 
