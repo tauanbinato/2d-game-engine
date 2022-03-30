@@ -19,6 +19,7 @@
 #include "../Systems/KeyboardControlSystem.h"
 #include "../Systems/CameraMovementSystem.h"
 #include "../Systems/ProjectileEmitSystem.h"
+#include "../Systems/ProjectileLifeCycleSystem.h"
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -60,6 +61,7 @@ void Game::LoadLevel(int level){
     m_registry->AddSystem<KeyboardControlSystem>();
     m_registry->AddSystem<CameraMovementSystem>();
     m_registry->AddSystem<ProjectileEmitSystem>();
+    m_registry->AddSystem<ProjectileLifeCycleSystem>();
 
     // Adding assets to the asset store
     m_assetStore->AddTexture(m_ptrRenderer, "tank-image", "./assets/images/tank-panther-right.png");
@@ -108,6 +110,7 @@ void Game::LoadLevel(int level){
     chopper.AddComponent<AnimationComponent>(2, 15, true);
     chopper.AddComponent<KeyboardControlledComponent>(glm::vec2(0.0, -120.0), glm::vec2(120.0, 00.0), glm::vec2(00.0, 120.0), glm::vec2(-120.0, 00.0));
     chopper.AddComponent<CameraFollowComponent>();
+    chopper.AddComponent<ProjectileEmitterComponent>(glm::vec2(500.0, 500.0), 300, 5000, 0, true);
     chopper.AddComponent<HealthComponent>(100);
 
     Entity radar = m_registry->CreateEntity();
@@ -122,7 +125,7 @@ void Game::LoadLevel(int level){
     tank.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     tank.AddComponent<SpriteComponent>("tank-image", 32, 32, 0, 0, 2);
     tank.AddComponent<BoxColliderComponent>(32, 32);
-    tank.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 10000, 0, false);
+    tank.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 0, false);
     tank.AddComponent<HealthComponent>(100);
 
     Entity truck = m_registry->CreateEntity();
@@ -130,7 +133,7 @@ void Game::LoadLevel(int level){
     truck.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     truck.AddComponent<SpriteComponent>("truck-image", 32, 32, 0, 0, 1);
     truck.AddComponent<BoxColliderComponent>(32, 32);
-    truck.AddComponent<ProjectileEmitterComponent>(glm::vec2(-300.0, 0), 1000, 10000, 0, false);
+    truck.AddComponent<ProjectileEmitterComponent>(glm::vec2(300.0, 0.0), 1000, 5000, 0, false);
     truck.AddComponent<HealthComponent>(100);
 
 };
@@ -160,6 +163,7 @@ void Game::Update(){
     // Perform the subscribtion of the events for all systems
     m_registry->GetSystem<DamageSystem>().SubscribeToCollisionEvent(m_eventBus);
     m_registry->GetSystem<KeyboardControlSystem>().SubscribeToKeyPressedEvents(m_eventBus);
+    m_registry->GetSystem<ProjectileEmitSystem>().SubscribeToSpaceBarEvent(m_eventBus);
 
     // Updating our systems
     m_registry->GetSystem<MovementSystem>().Update(deltaTime);
@@ -167,6 +171,7 @@ void Game::Update(){
     m_registry->GetSystem<CollisionSystem>().Update(true, m_eventBus);
     m_registry->GetSystem<CameraMovementSystem>().Update(m_camera);
     m_registry->GetSystem<ProjectileEmitSystem>().Update(m_registry);
+    m_registry->GetSystem<ProjectileLifeCycleSystem>().Update();
 
     // Update the registry to process the entities that are in the buffer
     m_registry->Update();
@@ -258,6 +263,9 @@ void Game::ProcessInput(){
             }
             if(sdlEvent.key.keysym.sym == SDLK_p) {
                 m_isDebug = !m_isDebug;
+            }
+            if (sdlEvent.key.keysym.sym == SDLK_SPACE) {
+                m_eventBus->EmitEvent<ShootProjectileEvent>(m_registry);
             }
 
             // Emiting KeyDown Events
