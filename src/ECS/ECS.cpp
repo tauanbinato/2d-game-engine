@@ -181,12 +181,21 @@ void Registry::Update() {
     }
     m_entitiesTobeAdded.clear();
 
+    // Process the entities that are waiting to be killed from the active systems
     for(auto entity: m_entitiesToBeKilled) {
 
         Registry::RemoveEntityFromSystems(entity);
 
         // Clear the component signatures of that entity
         m_entityComponentSignatures[entity.GetId()].reset();
+
+        // Remove the entity from the component pools
+        for (auto pool: m_componentTypePools) {
+            if (pool) {
+                pool->RemoveEntityFromPool(entity.GetId());
+            }
+        }
+
         // Make the entity id to be available to be reused
         m_freeIds.push_back(entity.GetId());
 
