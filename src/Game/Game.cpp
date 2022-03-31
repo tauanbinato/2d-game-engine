@@ -23,6 +23,7 @@
 #include "../Systems/ProjectileLifeCycleSystem.h"
 #include "../Systems/RenderTextSystem.h"
 #include "../Systems/RenderHealthBarSystem.h"
+#include "../Systems/RenderGUISystem.h"
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -125,6 +126,7 @@ void Game::LoadLevel(int level){
     m_registry->AddSystem<ProjectileLifeCycleSystem>();
     m_registry->AddSystem<RenderTextSystem>();
     m_registry->AddSystem<RenderHealthBarSystem>();
+    m_registry->AddSystem<RenderGUISystem>();
 
     // Adding assets to the asset store
     m_assetStore->AddTexture(m_ptrRenderer, "tank-image", "./assets/images/tank-panther-right.png");
@@ -174,8 +176,8 @@ void Game::LoadLevel(int level){
     // Create some entities
     Entity chopper = m_registry->CreateEntity();
     chopper.Tag("player");
-    chopper.AddComponent<TransformComponent>(glm::vec2(100.0, 100.0), glm::vec2(2.0, 2.0), 0.0);
-    chopper.AddComponent<RigidBodyComponent>(glm::vec2(120, 0.0));
+    chopper.AddComponent<TransformComponent>(glm::vec2(500.0, 250.0), glm::vec2(2.0, 2.0), 0.0);
+    chopper.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
     chopper.AddComponent<SpriteComponent>("chopper-image", 32, 32, 0, 0, 2, false);
     chopper.AddComponent<AnimationComponent>(2, 15, true);
     chopper.AddComponent<KeyboardControlledComponent>(glm::vec2(0.0, -120.0), glm::vec2(120.0, 00.0), glm::vec2(00.0, 120.0), glm::vec2(-120.0, 00.0));
@@ -265,13 +267,12 @@ void Game::Render(){
     m_registry->GetSystem<RenderSystem>().Update(m_ptrRenderer, m_assetStore, m_camera);
     m_registry->GetSystem<RenderTextSystem>().Update(m_ptrRenderer, m_assetStore, m_camera);
     m_registry->GetSystem<RenderHealthBarSystem>().Update(m_ptrRenderer, m_assetStore, m_camera);
+
+    // Debug Mode
     if(m_isDebug) {
         m_registry->GetSystem<DebugCollisionSystem>().Update(m_ptrRenderer, m_camera);
 
-        ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
-        ImGui::Render();
-        ImGuiSDL::Render(ImGui::GetDrawData());
+        m_registry->GetSystem<RenderGUISystem>().Update(m_registry);
     }
 
 
