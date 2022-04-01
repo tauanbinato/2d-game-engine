@@ -24,89 +24,102 @@ class RenderGUISystem: public System {
     public:
         RenderGUISystem() = default;
 
-        void Update(const std::unique_ptr<Registry>& registry){
+        void Update(const std::unique_ptr<Registry>& registry, const SDL_Rect& camera){
             ImGui::NewFrame();
 
-            if(ImGui::Begin("Enemy Spawner")){
-                ImGui::TextWrapped("[Transform Component]");
-                // Transform Component ------------
-                static int enemyXPos = 500;
-                static int enemyYPos = 500;
-                ImGui::InputInt("Enemy X Position", &enemyXPos);
-                ImGui::InputInt("Enemy Y Position", &enemyYPos);
+            // Display a window to customize and create new enemies
+            if (ImGui::Begin("Spawn enemies")) {
+                // Static variables to hold input values
+                static int posX = 0;
+                static int posY = 0;
+                static int scaleX = 1;
+                static int scaleY = 1;
+                static int velX = 0;
+                static int velY = 0;
+                static int health = 100;
+                static float rotation = 0.0;
+                static float projAngle = 0.0;
+                static float projSpeed = 100.0;
+                static int projRepeat = 10;
+                static int projDuration = 10;
+                const char* sprites[] = {"tank-image", "truck-image"};
+                static int selectedSpriteIndex = 0;
 
-                static float enemyXScale = 1.0;
-                static float enemyYScale = 1.0;
-                ImGui::InputFloat("Enemy X Scale", &enemyXScale);
-                ImGui::InputFloat("Enemy Y Scale", &enemyYScale);
+                // Section to input enemy sprite texture id 
+                if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::Combo("texture id", &selectedSpriteIndex, sprites, IM_ARRAYSIZE(sprites));
+                }
+                ImGui::Spacing();
 
-                static float enemyRotation = 0.0;
-                ImGui::InputFloat("Enemy Rotation (Angle)", &enemyRotation);
+                // Section to input enemy transform values
+                if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::InputInt("position x", &posX);
+                    ImGui::InputInt("position y", &posY);
+                    ImGui::SliderInt("scale x", &scaleX, 1, 10);
+                    ImGui::SliderInt("scale y", &scaleY, 1, 10);
+                    ImGui::SliderAngle("rotation (deg)", &rotation, 0, 360);
+                }
+                ImGui::Spacing();
 
-                // Rigidbody Component -------------
-                ImGui::TextWrapped("[RigidBody Component]");
-                static float enemyVelocityX = 0.0;
-                static float enemyVelocityY = 0.0;
-                ImGui::InputFloat("Enemy Velocity X", &enemyVelocityX);
-                ImGui::InputFloat("Enemy Velocity Y", &enemyVelocityY);
+                // Section to input enemy rigid body values
+                if (ImGui::CollapsingHeader("Rigid body", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::InputInt("velocity x", &velX);
+                    ImGui::InputInt("velocity y", &velY);
+                }
+                ImGui::Spacing();
 
-                // Sprite Component -------------
-                ImGui::TextWrapped("[Sprite Component]");
-                const char* assets_ids[] = { "tank-image","chopper-image","radar-image","truck-image" };
-                static int assetId = 1;
-                ImGui::Combo("Assets in Store", &assetId, assets_ids, IM_ARRAYSIZE(assets_ids));
-                static int enemySpriteWidth = 32;
-                static int enemySpriteHeight = 32;
-                ImGui::InputInt("Enemy Sprite Width", &enemySpriteWidth);
-                ImGui::InputInt("Enemy Sprite Height", &enemySpriteHeight);
-                static int enemySpriteSourceRectX = 0;
-                static int enemySpriteSourceRectY = 0;
-                ImGui::InputInt("Enemy Sprite Source Rect X", &enemySpriteSourceRectX);
-                ImGui::InputInt("Enemy Sprite Source Rect Y", &enemySpriteSourceRectY);
-                static int enemySpriteZIndex = 2;
-                ImGui::InputInt("Enemy Sprite Z Index", &enemySpriteZIndex);
+                // Section to input enemy projectile emitter values
+                if (ImGui::CollapsingHeader("Projectile emitter", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::SliderAngle("angle (deg)", &projAngle, 0, 360);
+                    ImGui::SliderFloat("speed (px/sec)", &projSpeed, 10, 500);
+                    ImGui::InputInt("repeat (sec)", &projRepeat);
+                    ImGui::InputInt("duration (sec)", &projDuration);
+                }
+                ImGui::Spacing();
 
-                // BoxColliderComponent ----------------
-                ImGui::TextWrapped("[Box Collider Component]");
-                static int enemyBoxColliderX = 32;
-                static int enemyBoxColliderY = 32;
-                ImGui::InputInt("Enemy X Position", &enemyBoxColliderX);
-                ImGui::InputInt("Enemy X Position", &enemyBoxColliderY);
-                
+                // Section to input enemy health values
+                if (ImGui::CollapsingHeader("Health", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::SliderInt("%", &health, 0, 100);
+                }
 
-                // ProjectileEmitterComponent -----------
-                ImGui::TextWrapped("[Projectile Emitter Component]");
-                static float enemyEmitterVelocityX = 0.0;
-                static float enemyEmitterVelocityY = 0.0;
-                ImGui::InputFloat("Enemy Projectile Velocity X", &enemyEmitterVelocityX);
-                ImGui::InputFloat("Enemy Projectile Velocity Y", &enemyEmitterVelocityY);
-                static float enemyEmitterRateOfFire = 0.0;
-                ImGui::InputFloat("Enemy Projectile Emitter Rate Of Fire (ms)", &enemyEmitterRateOfFire);
-                static float enemyEmitterDuration = 0.0;
-                ImGui::InputFloat("Enemy Projectile Duration (ms)", &enemyEmitterDuration);
-                static int enemyEmitterDamagePercentage = 0.0;
-                ImGui::InputInt("Enemy Projectile Damage Percentage (%)", &enemyEmitterDamagePercentage);
-                static bool enemyEmitterIsFriendly = false;
-                ImGui::Checkbox("Is enemy emitter friendly?", &enemyEmitterIsFriendly);
-
-                // HealthComponent -----------
-                static int enemyHealthPercentage = 100;
-                ImGui::InputInt("Enemy Health", &enemyHealthPercentage);
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
 
                 if(ImGui::Button("Create new enemy")){
                     Entity enemy = registry->CreateEntity();
                     enemy.Group("enemies");
-                    enemy.AddComponent<TransformComponent>(glm::vec2(enemyXPos, enemyYPos), glm::vec2(enemyXScale, enemyYScale), enemyRotation);
-                    enemy.AddComponent<RigidBodyComponent>(glm::vec2(enemyVelocityX, enemyVelocityY));
-                    enemy.AddComponent<SpriteComponent>(assets_ids[assetId], enemySpriteWidth, enemySpriteHeight, enemySpriteSourceRectX, enemySpriteSourceRectY, enemySpriteZIndex);
-                    enemy.AddComponent<BoxColliderComponent>(enemyBoxColliderX, enemyBoxColliderY);
-                    enemy.AddComponent<ProjectileEmitterComponent>(glm::vec2(enemyEmitterVelocityX, enemyEmitterVelocityY), enemyEmitterRateOfFire, enemyEmitterDuration, enemyEmitterDamagePercentage, enemyEmitterIsFriendly);
-                    enemy.AddComponent<HealthComponent>(enemyHealthPercentage);
+                    enemy.AddComponent<TransformComponent>(glm::vec2(posX, posY), glm::vec2(scaleX, scaleY), rotation);
+                    enemy.AddComponent<RigidBodyComponent>(glm::vec2(velX, velY));
+                    enemy.AddComponent<SpriteComponent>(sprites[selectedSpriteIndex], 32, 32, 0, 0, 2);
+                    enemy.AddComponent<BoxColliderComponent>(32, 32);
+                    double projVelX = cos(projAngle) * projSpeed; // convert from angle-speed to x-value
+                    double projVelY = sin(projAngle) * projSpeed; // convert from angle-speed to y-value
+                    enemy.AddComponent<ProjectileEmitterComponent>(glm::vec2(projVelX, projVelY), projRepeat * 1000, projDuration * 1000, 10, false);
+                    enemy.AddComponent<HealthComponent>(health);
+
+                    // Reset all input values after we create a new enemy
+                    posX = posY = rotation = projAngle = 0;
+                    scaleX = scaleY = 1;
+                    projRepeat = projDuration = 10;
+                    projSpeed = 100;
+                    health = 100;
                 }
             }
             ImGui::End();
 
-            
+            // Display a small overlay window to display the map position using the mouse
+            ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav;
+            ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always, ImVec2(0, 0));
+            ImGui::SetNextWindowBgAlpha(0.9f);
+            if (ImGui::Begin("Map coordinates", NULL, windowFlags)) {
+                ImGui::Text(
+                    "Map coordinates (x=%.1f, y=%.1f)",
+                    ImGui::GetIO().MousePos.x + camera.x,
+                    ImGui::GetIO().MousePos.y + camera.y
+                );
+            }
+            ImGui::End();
 
             ImGui::Render();
             ImGuiSDL::Render(ImGui::GetDrawData());

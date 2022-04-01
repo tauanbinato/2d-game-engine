@@ -31,6 +31,19 @@ class RenderSystem: public System {
                 RenderableEntity re;
                 re.spriteComponent = entity.GetComponent<SpriteComponent>();
                 re.transformComponent = entity.GetComponent<TransformComponent>();
+
+                // Bypass rendering entitites if they are outside the cameraview (culling)
+                bool isEntityOutsideCameraView = (
+                    re.transformComponent.position.x + (re.transformComponent.scale.x * re.spriteComponent.width) < camera.x ||
+                    re.transformComponent.position.x > camera.x + camera.w ||
+                    re.transformComponent.position.y + ((re.transformComponent.scale.y * re.spriteComponent.height)) < camera.y ||
+                    re.transformComponent.position.y > camera.y + camera.h
+                );
+
+                // Culling sprites outside camera view and not fixed
+                if (isEntityOutsideCameraView && !re.spriteComponent.isFixed) {
+                    continue;
+                }
                 renderableEntities.emplace_back(re);
             }
 
@@ -63,7 +76,7 @@ class RenderSystem: public System {
                     &dstRect,
                     transform.rotation,
                     NULL,
-                    SDL_FLIP_NONE
+                    sprite.flip
                 );
 
             }

@@ -21,8 +21,11 @@ OBJ_NAME = gameengine
 build:
 	$(CC) $(COMPILER_FLAGS) $(LAND_STD) $(INCLUDE_PATH) $(SRC_FILES) $(LINKER_FLAGS) -o $(OBJ_NAME);
 
-run:
+runb:
 	make build && ./$(OBJ_NAME)
+
+run:
+	./$(OBJ_NAME)
 
 debug: 
 	$(CC) $(COMPILER_FLAGS) $(LAND_STD) $(INCLUDE_PATH) $(SRC_FILES) $(LINKER_FLAGS) -o $(OBJ_NAME) -g;
