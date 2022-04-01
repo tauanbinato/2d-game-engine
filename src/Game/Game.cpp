@@ -124,7 +124,7 @@ void Game::Setup(){
     //load the first level
     LevelLoader loader;
     m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os);
-    loader.LoadLevel(m_lua, m_registry, m_assetStore, m_ptrRenderer, 1);
+    loader.LoadLevel(m_lua, m_registry, m_assetStore, m_ptrRenderer, 2);
 }
 
 void Game::Update(){
@@ -158,7 +158,7 @@ void Game::Update(){
     m_registry->GetSystem<CameraMovementSystem>().Update(m_camera);
     m_registry->GetSystem<ProjectileEmitSystem>().Update(m_registry);
     m_registry->GetSystem<ProjectileLifeCycleSystem>().Update();
-    //m_registry->GetSystem<LuaScriptSystem>().Update();
+    m_registry->GetSystem<LuaScriptSystem>().Update(deltaTime, SDL_GetTicks());
     
 
     // Update the registry to process the entities that are in the buffer
@@ -242,8 +242,8 @@ void Game::ProcessInput(){
 };
 
 void Game::Destroy(){
-    ImGuiSDL::Deinitialize();
     ImGui::DestroyContext();
+    ImGuiSDL::Deinitialize();
     SDL_DestroyRenderer(m_ptrRenderer);
     SDL_DestroyWindow(m_ptrWindow);
     SDL_Quit();

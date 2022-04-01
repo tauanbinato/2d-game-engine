@@ -24,6 +24,7 @@ class ProjectileEmitSystem: public System {
         ProjectileEmitSystem () {
             RequireComponent<ProjectileEmitterComponent>();
             RequireComponent<TransformComponent>();
+            RequireComponent<RigidBodyComponent>();
         }
 
         void SubscribeToSpaceBarEvent(std::unique_ptr<EventBus>& eventBus){
@@ -52,8 +53,8 @@ class ProjectileEmitSystem: public System {
                     if (rigidBody.velocity.y > 0) directionY = +1;
                     if (rigidBody.velocity.y < 0) directionY = -1;
                     
-                    projectileVelocity.x = projectileEmitter.projectileVelocity.x * directionX;
-                    projectileVelocity.y = projectileEmitter.projectileVelocity.y * directionY;
+                    projectileVelocity.x = projectileEmitter.projectileVelocity.x * directionX + rigidBody.velocity.x;
+                    projectileVelocity.y = projectileEmitter.projectileVelocity.y * directionY + rigidBody.velocity.y;
 
                     ShootProjectile(entity, event.m_registry, projectilePosition, projectileVelocity);
                 }
@@ -67,12 +68,13 @@ class ProjectileEmitSystem: public System {
 
             // For every enimy entity we leave them shooting
             for (auto entity : GetSystemEntities()) {
+                const auto rigidBody = entity.GetComponent<RigidBodyComponent>();
                 auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
                 if (!projectileEmitter.isFriendly) {
 
                     glm::vec2 projectilePosition = glm::vec2(0);
                     CenterProjectile(entity, projectilePosition);
-                    ShootProjectile(entity, registry, projectilePosition, projectileEmitter.projectileVelocity); 
+                    ShootProjectile(entity, registry, projectilePosition, (projectileEmitter.projectileVelocity + rigidBody.velocity)); 
                 }
                 
             }
