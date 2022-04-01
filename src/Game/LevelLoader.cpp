@@ -10,6 +10,7 @@
 #include "../Components/ProjectileEmitterComponent.h"
 #include "../Components/HealthComponent.h"
 #include "../Components/TextLabelComponent.h"
+#include "../Components/LuaScriptComponent.h"
 #include "./Game.h"
 #include "../Logger/Logger.h"
 #include <sol/sol.hpp>
@@ -276,6 +277,15 @@ void LevelLoader::LoadLevel(sol::state& m_lua, const std::unique_ptr<Registry>& 
                 /* ex:
                 chopper.AddComponent<KeyboardControlledComponent>(glm::vec2(0.0, -120.0), glm::vec2(120.0, 00.0), glm::vec2(00.0, 120.0), glm::vec2(-120.0, 00.0));
                 */
+            }
+
+            // LuaScriptComponent
+            sol::optional<sol::table> script = entity["components"]["on_update_script"];
+            if (script != sol::nullopt) {
+                // Fetch the lua script function
+                sol::function func = entity["components"]["on_update_script"][0];
+                // Add the sol func to the component
+                newEntity.AddComponent<LuaScriptComponent>(func);
             }
         }
         i++;

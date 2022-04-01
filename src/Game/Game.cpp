@@ -15,6 +15,7 @@
 #include "../Systems/RenderTextSystem.h"
 #include "../Systems/RenderHealthBarSystem.h"
 #include "../Systems/RenderGUISystem.h"
+#include "../Systems/LuaScriptSystem.h"
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -115,10 +116,14 @@ void Game::Setup(){
     m_registry->AddSystem<RenderTextSystem>();
     m_registry->AddSystem<RenderHealthBarSystem>();
     m_registry->AddSystem<RenderGUISystem>();
+    m_registry->AddSystem<LuaScriptSystem>();
+
+    //Create the binding between C++ and LUA
+    m_registry->GetSystem<LuaScriptSystem>().CreateLuaBindings(m_lua);
     
     //load the first level
     LevelLoader loader;
-    m_lua.open_libraries(sol::lib::base, sol::lib::math);
+    m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os);
     loader.LoadLevel(m_lua, m_registry, m_assetStore, m_ptrRenderer, 1);
 }
 
@@ -153,6 +158,7 @@ void Game::Update(){
     m_registry->GetSystem<CameraMovementSystem>().Update(m_camera);
     m_registry->GetSystem<ProjectileEmitSystem>().Update(m_registry);
     m_registry->GetSystem<ProjectileLifeCycleSystem>().Update();
+    //m_registry->GetSystem<LuaScriptSystem>().Update();
     
 
     // Update the registry to process the entities that are in the buffer
