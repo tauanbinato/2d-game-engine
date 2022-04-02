@@ -10,7 +10,8 @@ SRC_FILES = ./src/*.cpp \
 	    ./src/Logger/*.cpp \
 	    ./src/ECS/*.cpp \
 	    ./src/AssetStore/*.cpp \
-	    ./libs/imgui/*.cpp
+	    ./libs/imgui/*.cpp \
+	    ./src/MapEditor/*.cpp
 LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -llua5.3
 OBJ_NAME = gameengine
 
