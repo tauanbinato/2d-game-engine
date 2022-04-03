@@ -19,6 +19,7 @@ class AssetStore {
         void ClearAssets();
         void AddTexture(SDL_Renderer* renderer, const std::string& assetId, const std::string& filePath);
         SDL_Texture* GetTexture(const std::string& assetId);
+        std::map<std::string, SDL_Texture*> GetAllTextures();
 
         // Fonts Handling
         void AddFont(const std::string& assetId, const std::string& filePath, int fontSize);

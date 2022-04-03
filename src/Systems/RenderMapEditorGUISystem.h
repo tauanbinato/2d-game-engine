@@ -8,6 +8,7 @@
 #include <imgui/imgui_impl_sdl.h>
 #include <glm/glm.hpp>
 #include "../MapEditor/MapEditor.h"
+#include "../Utilities/imfilebrowser.h"
 
 #include "../Logger/Logger.h"
 #include "../Components/TransformComponent.h"
@@ -21,113 +22,160 @@
 #include "../Components/HealthComponent.h"
 #include "../Components/TextLabelComponent.h"
 #include "../Utilities/IconsFontAwesome.h"
+#include <string>
+#include <map>
 
-static void ShowExampleMenuFile()
-{
-    ImGui::MenuItem("(demo menu)", NULL, false, false);
-    if (ImGui::MenuItem("New")) {}
-    if (ImGui::MenuItem("Open", "Ctrl+O")) {}
-    if (ImGui::BeginMenu("Open Recent"))
-    {
-        ImGui::MenuItem("fish_hat.c");
-        ImGui::MenuItem("fish_hat.inl");
-        ImGui::MenuItem("fish_hat.h");
-        if (ImGui::BeginMenu("More.."))
+static bool m_show_add_texture = false;
+static bool m_show_assets = false;
+
+void ShowAddTexture(std::unique_ptr<ImGui::FileBrowser>& m_fileDialog, std::unique_ptr<AssetStore>& m_assetStore, SDL_Renderer* m_ptrRenderer) {
+    if (ImGui::Begin("Add New Texture", &m_show_add_texture, ImGuiWindowFlags_MenuBar))
+    {   
+
+        ImGui::Text("Upload new Texture:");
+        ImGui::BulletText("Please select a file from tour computer. This can be a tilemap, sprite, etc..");
+        ImGui::Spacing();
+        ImGui::SameLine();
+        ImGui::Spacing();
+        if(ImGui::Button("Upload Texture")){
+            m_fileDialog->Open();
+        }
+        ImGui::Spacing();
+
+        if(m_fileDialog->HasSelected())
         {
-            ImGui::MenuItem("Hello");
-            ImGui::MenuItem("Sailor");
-            if (ImGui::BeginMenu("Recurse.."))
+            static char str1[128] = "";
+            static char* char_arr_texture_path;
+            std::string texturePath = m_fileDialog->GetSelected().string();
+            char_arr_texture_path = &texturePath[0];
+            ImGui::InputText("Selected Texture Path ", char_arr_texture_path, IM_ARRAYSIZE(str1), ImGuiInputTextFlags_ReadOnly);
+            ImGui::Spacing();
+
+            ImGui::BulletText("Please, create a texture id for your file.");
+            static char asset_id[128] = "";
+            ImGui::InputTextWithHint("Texture ID", "ex: tilemap-texture, player..", asset_id, IM_ARRAYSIZE(asset_id), ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::Spacing();
+
+            if(ImGui::Button("Create Texture")){
+                m_assetStore->AddTexture(m_ptrRenderer, asset_id, char_arr_texture_path);
+                m_show_add_texture = false;
+            }
+            
+        }
+    }
+    ImGui::End();
+};
+
+void ShowAssets(std::unique_ptr<ImGui::FileBrowser>& m_fileDialog, std::unique_ptr<AssetStore>& m_assetStore, SDL_Renderer* m_ptrRenderer) {
+    ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Asset Store", &m_show_assets, ImGuiWindowFlags_MenuBar))
+    {
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
             {
-                ShowExampleMenuFile();
+                if (ImGui::MenuItem("Add Texture")) m_show_add_texture = true;
+                if (ImGui::MenuItem("Close")) m_show_assets = false;
                 ImGui::EndMenu();
             }
-            ImGui::EndMenu();
+            ImGui::EndMenuBar();
         }
-        ImGui::EndMenu();
-    }
-    if (ImGui::MenuItem("Save", "Ctrl+S")) {}
-    if (ImGui::MenuItem("Save As..")) {}
 
-    ImGui::Separator();
-    if (ImGui::BeginMenu("Options"))
-    {
-        static bool enabled = true;
-        ImGui::MenuItem("Enabled", "", &enabled);
-        ImGui::BeginChild("child", ImVec2(0, 60), true);
-        for (int i = 0; i < 10; i++)
-            ImGui::Text("Scrolling Text %d", i);
-        ImGui::EndChild();
-        static float f = 0.5f;
-        static int n = 0;
-        ImGui::SliderFloat("Value", &f, 0.0f, 1.0f);
-        ImGui::InputFloat("Input", &f, 0.1f);
-        ImGui::Combo("Combo", &n, "Yes\0No\0Maybe\0\0");
-        ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("Colors"))
-    {
-        float sz = ImGui::GetTextLineHeight();
-        for (int i = 0; i < ImGuiCol_COUNT; i++)
+        // Left
+        static int selected = 1;
+        static std::string selectedAssetId;
         {
-            const char* name = ImGui::GetStyleColorName((ImGuiCol)i);
-            ImVec2 p = ImGui::GetCursorScreenPos();
-            ImGui::GetWindowDrawList()->AddRectFilled(p, ImVec2(p.x + sz, p.y + sz), ImGui::GetColorU32((ImGuiCol)i));
-            ImGui::Dummy(ImVec2(sz, sz));
-            ImGui::SameLine();
-            ImGui::MenuItem(name);
+            ImGui::BeginChild("Assets List", ImVec2(150, 0), true);
+            std::map<std::string, SDL_Texture*> textures = m_assetStore->GetAllTextures();
+            
+            for (auto it = ++textures.begin(); it != textures.end(); ++it)
+            {
+                auto i = std::distance(textures.begin(), it);
+                char label[128];
+                sprintf(label, "%s", (it->first.c_str()));
+                if (ImGui::Selectable(label, selected == i)) {
+                    selected = i;
+                    selectedAssetId = label;
+                }
+                    
+            }
+            ImGui::EndChild();
         }
-        ImGui::EndMenu();
-    }
+        ImGui::SameLine();
 
-    // Here we demonstrate appending again to the "Options" menu (which we already created above)
-    // Of course in this demo it is a little bit silly that this function calls BeginMenu("Options") twice.
-    // In a real code-base using it would make senses to use this feature from very different code locations.
-    if (ImGui::BeginMenu("Options")) // <-- Append!
-    {
-        static bool b = true;
-        ImGui::Checkbox("SomeOption", &b);
-        ImGui::EndMenu();
-    }
+        // Right
+        {
+            ImGui::BeginGroup();
+            ImGui::BeginChild("Assets View", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
+            ImGui::Text("Selected: %d", selected);
+            ImGui::Separator();
+            if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
+            {
+                if (ImGui::BeginTabItem("Image"))
+                {
+                    ImGui::Image(m_assetStore->GetTexture(selectedAssetId), ImVec2(200, 200));
+                    ImGui::EndTabItem();
+                }
 
-    if (ImGui::BeginMenu("Disabled", false)) // Disabled
-    {
-        IM_ASSERT(0);
+                    
+                if (ImGui::BeginTabItem("Details"))
+                {
+                    ImGui::Text("ASSET_ID: %s", selectedAssetId.c_str());
+                    ImGui::EndTabItem();
+                }
+                ImGui::EndTabBar();
+            }
+            ImGui::EndChild();
+
+            if (ImGui::Button("Revert")) {}
+            ImGui::SameLine();
+            if (ImGui::Button("Save")) {}
+            ImGui::EndGroup();
+        }
     }
-    if (ImGui::MenuItem("Checked", NULL, true)) {}
-    if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+    ImGui::End();
 }
 
 class RenderMapEditorGUISystem: public System {
     public:
         RenderMapEditorGUISystem() = default;
 
-        void Update(const std::unique_ptr<Registry>& registry, const SDL_Rect& camera, std::unique_ptr<AssetStore>& assetStore){
+        void Update(
+            const std::unique_ptr<Registry>& registry, 
+            const SDL_Rect& camera, 
+            std::unique_ptr<AssetStore>& m_assetStore, 
+            std::unique_ptr<ImGui::FileBrowser>& m_fileDialog,
+            SDL_Renderer* m_ptrRenderer
+        )
+        {
             // Start the Dear ImGui frame
             ImGui::NewFrame();
+            
 
+            if(m_show_add_texture) { ShowAddTexture(m_fileDialog, m_assetStore, m_ptrRenderer); };
+            if(m_show_assets) { ShowAssets(m_fileDialog, m_assetStore, m_ptrRenderer); };
+        
             if (ImGui::BeginMainMenuBar())
 	        {
-                if (ImGui::BeginMenu("File"))
+                if (ImGui::BeginMenu("Menu"))
                 {
-                    if (ImGui::MenuItem("Add Tileset"))
-                    {
-                        
-                    }
+                    if (ImGui::MenuItem("Open Asset Store")) m_show_assets = true;
+                    
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
             }
+            m_fileDialog->Display();
+
             
             if (ImGui::Begin("Texture"))
 	        {   
-                ImGuiIO& io = ImGui::GetIO();
 
                 int imageWidth = 0;
                 int imageHeight = 0;
 
                 // We need to query the texture to get the image width/height. This is used for setting the src_Rect positions
-                if (SDL_QueryTexture(assetStore->GetTexture("tilemap"), NULL, NULL, &imageWidth, &imageHeight) != 0)
+                if (SDL_QueryTexture(m_assetStore->GetTexture("tilemap"), NULL, NULL, &imageWidth, &imageHeight) != 0)
                 {
                     const char* errMsg = SDL_GetError();
                     Logger::Error("__FUNC: Load Tileset: " + std::string(errMsg));
@@ -142,7 +190,7 @@ class RenderMapEditorGUISystem: public System {
                     //mTilesetLocations.push_back(mImageName);
                 }
 
-                ImGui::Image(assetStore->GetTexture("tilemap"), ImVec2(imageWidth, imageHeight));
+                ImGui::Image(m_assetStore->GetTexture("tilemap"), ImVec2(imageWidth, imageHeight));
 
                 int mousePosX = static_cast<int>(ImGui::GetMousePos().x - ImGui::GetWindowPos().x);
                 int mousePosY = static_cast<int>(ImGui::GetMousePos().y - ImGui::GetWindowPos().y - 30);
@@ -154,7 +202,7 @@ class RenderMapEditorGUISystem: public System {
                 {
                     for (int j = 0; j < rows; j++)
                     {
-                        auto drawList = ImGui::GetWindowDrawList();
+                        // auto drawList = ImGui::GetWindowDrawList();
 
                         // Check to see if we are in the area of the desired 2D tile
                         if ((mousePosX >= (imageWidth / cols) * i && mousePosX <= (imageWidth / cols) + ((imageWidth / cols) * i))

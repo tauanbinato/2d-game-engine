@@ -122,32 +122,6 @@ class RenderGUISystem: public System {
                 ImGui::EndMainMenuBar();
             }
 
-            if (ImGui::TreeNode("Grid"))
-            {
-                static int selected[4 * 4] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-                for (int i = 0; i < 4 * 4; i++)
-                {
-                    ImGui::PushID(i);
-                    if (ImGui::Selectable("Sailor", selected[i] != 0, 0, ImVec2(50, 50)))
-                    {
-                        // Toggle
-                        selected[i] = !selected[i];
-
-                        // Note: We _unnecessarily_ test for both x/y and i here only to silence some static analyzer.
-                        // The second part of each test is unnecessary.
-                        int x = i % 4;
-                        int y = i / 4;
-                        if (x > 0)           { selected[i - 1] ^= 1; }
-                        if (x < 3 && i < 15) { selected[i + 1] ^= 1; }
-                        if (y > 0 && i > 3)  { selected[i - 4] ^= 1; }
-                        if (y < 3 && i < 12) { selected[i + 4] ^= 1; }
-                    }
-                    if ((i % 4) < 3) ImGui::SameLine();
-                    ImGui::PopID();
-                }
-                ImGui::TreePop();
-            }
-
             // Display a window to customize and create new enemies
             if (ImGui::Begin("Spawn enemies")) {
                 // Static variables to hold input values

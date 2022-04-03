@@ -35,11 +35,14 @@ void AssetStore::AddTexture(SDL_Renderer* renderer, const std::string& assetId, 
     // Add the texture to the map
     m_textures.emplace(assetId, texture);
 
-    // Logger::Log("New texture added to the Asset Store with id = " + assetId);
+    Logger::Log("New texture added to the Asset Store with id = " + assetId);
 }
 
 SDL_Texture* AssetStore::GetTexture(const std::string& assetId){
     return m_textures[assetId];
+}
+std::map<std::string, SDL_Texture*> AssetStore::GetAllTextures() {
+    return m_textures;
 }
 
 void AssetStore::AddFont(const std::string& assetId, const std::string& filePath, int fontSize) {

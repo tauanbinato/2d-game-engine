@@ -6,6 +6,8 @@
 #include "../ECS/ECS.h"
 #include "../AssetStore/AssetStore.h"
 #include "../EventBus/EventBus.h"
+#include <imgui/imgui.h>
+#include "../Utilities/imfilebrowser.h"
 
 
 const int MAP_EDITOR_FPS = 60;
@@ -33,6 +35,7 @@ class MapEditor {
         std::unique_ptr<Registry> m_registry; // Registry* m_registry;
         std::unique_ptr<AssetStore> m_assetStore;
         std::unique_ptr<EventBus> m_eventBus;
+        std::unique_ptr<ImGui::FileBrowser> m_fileDialog;
 
         void InitializeImGUIConfigs();
 
@@ -46,6 +49,8 @@ class MapEditor {
         void Update();
         void Render();
         void Setup();
+
+        
     
 };
 

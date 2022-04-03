@@ -84,22 +84,15 @@ void MapEditor::InitializeImGUIConfigs() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
-	// Config fonts
-	ImFontConfig config;
-	config.MergeMode = true;
-
-	// static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	// if (!io.Fonts->AddFontFromFileTTF("../../assets/fonts/fontawesome-webfont.ttf", 14.0f, &config, icon_ranges)) {
-    //     Logger::Error("FAILED TO LOAD FONT!");
-    //     exit(-1);
-    // }
-		
-    io.KeyMap[ImGuiKey_Space] = SDL_SCANCODE_SPACE;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.KeyMap[ImGuiKey_KeyPadEnter] = 271;
+    io.KeyMap[ImGuiKey_Enter] = SDLK_RETURN;
+    io.KeyMap[ImGuiKey_Space] = SDLK_SPACE;
+    io.KeyMap[ImGuiKey_Backspace] = SDLK_BACKSPACE;
+    
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable some options
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
-
 
 	ImGuiSDL::Initialize(m_ptrRenderer, m_WINDOW_WIDTH, m_WINDOW_HEIGHT);
 
@@ -116,6 +109,11 @@ void MapEditor::InitializeImGUIConfigs() {
 }
 
 void MapEditor::Setup(){
+    m_fileDialog = std::make_unique<ImGui::FileBrowser>();
+    m_fileDialog->SetTitle("Select a texture");
+    m_fileDialog->SetTypeFilters({".jpg", ".png"});
+
+    m_assetStore->ClearAssets();
     m_assetStore->AddTexture(m_ptrRenderer, "tilemap", "./assets/tilemaps/jungle.png");
     m_registry->AddSystem<RenderMapEditorGUISystem>();
 }
@@ -149,8 +147,9 @@ void MapEditor::Render(){
         ImGui::ShowDemoWindow();
         ImGui::Render();
         ImGuiSDL::Render(ImGui::GetDrawData());
+        ImGui::EndFrame();
     } else {
-        m_registry->GetSystem<RenderMapEditorGUISystem>().Update(m_registry, m_camera, m_assetStore);
+        m_registry->GetSystem<RenderMapEditorGUISystem>().Update(m_registry, m_camera, m_assetStore, m_fileDialog, m_ptrRenderer);
         ImGui::EndFrame();
     }
 
@@ -171,6 +170,7 @@ void MapEditor::ProcessInput(){
 
         //Handling Imgui SDL
         ImGuiIO& io = ImGui::GetIO();
+        
 
         int mouseX, mouseY;
         const int buttons = SDL_GetMouseState(&mouseX, &mouseY);
@@ -190,13 +190,28 @@ void MapEditor::ProcessInput(){
                 break;
             
             case SDL_KEYDOWN:
+                if (sdlEvent.key.keysym.sym == SDLK_F1) {
+                    m_demoWindow = !m_demoWindow;
+                    break;
+                }
                 if(sdlEvent.key.keysym.sym == SDLK_ESCAPE) {
                     m_isRunning = false;
                 }
-                if (sdlEvent.key.keysym.sym == SDLK_F1) {
-                    m_demoWindow = !m_demoWindow;
+
+                if(sdlEvent.key.keysym.sym == SDLK_BACKSPACE) {
+                    io.KeysDown[sdlEvent.key.keysym.sym] = true;
                 }
+                
+                io.AddInputCharacter(sdlEvent.key.keysym.sym);
                 break;
+            
+            
+            case SDL_KEYUP:
+                if (sdlEvent.key.keysym.sym == SDLK_BACKSPACE) {
+                    io.KeysDown[sdlEvent.key.keysym.sym] = false;
+                    break;
+                }
+                
 
             default:
                 break;
